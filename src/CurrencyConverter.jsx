@@ -1,70 +1,79 @@
 import { useEffect, useState } from "react";
+import "./CurrencyConverter.css";
 
 const API_URL =
   "https://grippy.learn.pierre-godino.com/api/mock/react-converter";
 
 function CurrencyConverter() {
-  const [rates, setRates] = useState({});
+  const [rates, setRates] = useState([]);
   const [amount, setAmount] = useState(1);
   const [search, setSearch] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState("");
 
-  // Charger les taux de l'API
+  // Charger les taux
   useEffect(() => {
     async function fetchRates() {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setRates(data);
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        setRates(data.rates); // le tableau
+      } catch (error) {
+        console.error("Erreur API :", error);
+      }
     }
     fetchRates();
   }, []);
 
-  const currencies = Object.keys(rates);
-
-  // filtrer la recherche
-  const filteredCurrencies = currencies.filter((currency) =>
-    currency.toLowerCase().includes(search.toLowerCase())
+  // Filtrer les devises
+  const filteredCurrencies = rates.filter((c) =>
+    c.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Calculer la conversion
-  const conversion =
-    selectedCurrency && rates[selectedCurrency]
-      ? (amount * rates[selectedCurrency].rate).toFixed(2)
-      : "";
+  // Récupérer la devise sélectionnée
+  const selectedObj = rates.find((c) => c.code === selectedCurrency);
+
+  // Calcul conversion
+  const conversion = selectedObj ? (amount * selectedObj.rate).toFixed(2) : "";
 
   return (
-    <div>
+    <div className="converter-container">
       <h2>Currency Converter</h2>
 
       <label>Amount in €</label>
       <input
         type="number"
+        className="input-field"
         value={amount}
-        onChange={(e) => setAmount(e.target.value)}
+        onChange={(e) => setAmount(Number(e.target.value))}
       />
 
       <label>Search currency</label>
       <input
         type="text"
+        className="input-field"
         placeholder="USD, GBP..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
       <label>Select currency</label>
-      <select onChange={(e) => setSelectedCurrency(e.target.value)}>
-        <option value="">--Choose--</option>
+      <select
+        className="select-field"
+        value={selectedCurrency}
+        onChange={(e) => setSelectedCurrency(e.target.value)}
+      >
+        <option value="">-- Choose --</option>
         {filteredCurrencies.map((currency) => (
-          <option key={currency} value={currency}>
-            {rates[currency].name} ({currency})
+          <option key={currency.code} value={currency.code}>
+            {currency.description} ({currency.code})
           </option>
         ))}
       </select>
 
       {conversion && (
-        <div>
-          <h3>Result : {conversion}</h3>
-          <p>Devise : {selectedCurrency}</p>
+        <div className="result-box">
+          <h3>{conversion}</h3>
+          <p>{selectedObj.description}</p>
         </div>
       )}
     </div>
